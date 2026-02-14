@@ -1,3 +1,5 @@
+This repository documents the full lifecycle of building a local AI platform using Dify, Ollama, and RAG — from PoC to deployment.
+
 ---
 title: "Dify (Linux版)"
 author: "Gen K. Mariendorf"
