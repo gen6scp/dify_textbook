@@ -1,6 +1,4 @@
 
-This repository documents the full lifecycle of building a local AI platform using Dify, Ollama, and RAG — from PoC to deployment.
-
 ---
 title: "Dify (Linux版)"
 author: "Gen K. Mariendorf"
@@ -359,7 +357,7 @@ RAGについての概略を説明し、Chunk_size、Top_k、Temperature、Embedd
 
 ## RAG（Retrieval Augmented Generation）の概略
 
-![](img/rag_query_abstract.png)
+![RAG検索](img/rag_query_abstract.png)
 
 #### 検索の流れ：質問 $\rightarrow$ Embedding（意味ベクトル化）$\rightarrow$ ベクトルDBで類似検索 $\rightarrow$ 関連チャンク Top_k 件取得 $\rightarrow$ LLMへ渡す $\rightarrow$ 回答生成
 		  
@@ -377,7 +375,7 @@ RAGの基本構造は大きく三段階に分かれる。
 
 実務導入においてRAGが重要視される理由は、モデルの再学習を行わずに企業独自の知識を活用できる点にある。社内マニュアル、契約書、技術仕様書などをナレッジとして登録することで、閉じた環境内でAIを活用できる。特にローカルLLMと組み合わせることで、データを外部に送信せずに業務支援AIを構築することも可能である。
 
-重要なのは、RAGは単なる「検索＋生成」ではないという点である。検索精度はEmbeddingモデルとChunk設計に依存し、生成精度はプロンプト設計およびTemperatureなどの生成パラメータに依存する。つまりRAGの品質は、(1) 文書分割（Chunk）の妥当性、(2) 意味検索の精度（Embedding）、(3) 生成時の制御（Top_k）、という三つの設計要素のバランスで決まる。どれか一つが適合してないと、回答は不安定になる。RAGは「導入すれば自動で賢くなる」技術ではなく、実務上では設計と検証を繰り返す試行錯誤による工学的対象になる。
+重要なのは、RAGは単なる「検索＋生成」ではないという点である。検索精度はEmbeddingモデルとChunk設計に依存し、生成精度はプロンプト設計およびTemperatureなどの生成パラメータに依存する。つまりRAGの品質は、(1) 文書分割（Chunk）の妥当性、(2) 意味検索の精度（Embedding）、(3) 生成時の制御（Top_k）、という三つの設計要素のバランスで決まる。どれか一つが適合してないと、回答は不安定になる。**RAGは「導入すれば自動で賢くなる」技術ではなく、実務上では設計と検証を繰り返す試行錯誤による工学的対象になる**。
 
 本書では、Difyを用いてローカルLLM環境下でRAGを構築し、Chunk設計、Embedding選択、Top_k調整、Temperature制御といった各要素がどのように精度へ影響するかを実験的に検証する。目的は単に動かすことではなく、動かして、調整し、なぜ精度が変わるのかを理解することにある。
 
@@ -399,11 +397,11 @@ RAGの基本構造は大きく三段階に分かれる。
 
 ## Dify上でKnowledge Base（知識基盤）を作る
 
+![知識基盤: Hands-on Machine Learning with Scikit-Learn, Keras & TensorFlow](img/oreilly_hands_on_ML.png)
+
 #### Dify $\Rightarrow$ Knowledge $\Rightarrow$ Create Knowledge $\Rightarrow$ Import from file $\Rightarrow$ PDFをアップロード
 
 ### 準備
-
-![Hands-on Machine Learning with Scikit-Learn, Keras & TensorFlow](img/oreilly_hands_on_ML.png)
 
 * PDFを用意する（20〜30ページ）。おすすめは「章がはっきりしていて用語が繰り返し出る」技術文書。（例：プロトコル解説、API仕様の一部、社内手順書の抜粋など）
   - この例では、英文のO'Reillyの「[Hands-on Machine Learning with Scikit-Learn, Keras & TensorFlow](https://amzn.to/4cqxXpd)」の第１章（約３０ページ）を使用します。
@@ -411,8 +409,26 @@ RAGの基本構造は大きく三段階に分かれる。
 * TopK、Score Threshold、Rerankは「検索で拾うチャンクの量と質」を直接変える。([docs.dify.ai - Index Method][rag2])
 
 
+![Create Knowledgeを選択](img/dify_chapter2_01_start_knowledge.png)
+
+![この例ではImport FileでPDFファイルを選択](img/dify_chapter2_02_start_knowledge_file.png)
+
+![Chunkはデフォルトで1024を選択](img/dify_chapter2_03_choose_chunk.png)
+
+![Knowledgeが作成された](img/dify_chapter2_04_knowlege_created.png)
+
+
+
 
 ## 設定
+
+![ChatbotからKnowledgeを使う（Studit -> DeepSeek Chatbotを選択）](img/dify_chapter2_07_configure_chatbot.png)
+
+![ChatbotからKnowlegeを選択](img/dify_chapter2_08_connect_deepseek_to_knowledge.png)
+
+![ChatbotのTop_Kパラメタを設定（初期値は2）](img/dify_chapter2_09_set_topK_parameter.png)
+
+
 
 ### Chunking設定
 
@@ -427,14 +443,28 @@ Difyは「各ドキュメントごとにチャンク設定を持てる」ので�
 
 ### Embeddingモデルを選ぶ（最初は外部推奨）
 
-日本語が混ざる可能性があるなら **multilingual系**が無難。Difyチュートリアルでも言及がある。
+日本語が混ざる可能性があるなら **multilingual系**が無難。Difyチュートリアルでも言及がある。日本語対応の設計としては
 
-設計としては
+* 生成：Ollama deepseek-r1:1.5b（ローカル）
+* Embedding（検索）：外部（multilingual対応。例えばChatGPT API）
 
-* 生成（回答）：Ollama deepseek-r1:1.5b（ローカル）
-* Embedding（検索）：外部（multilingual）
+等で行う。この例ではO'Reillyの英文テキストを使うのでこの部分は深く考えない。Ollamaから使える無料版の`bge-m3`を使用する。
 
-で行う。この例ではO'Reillyの英文テキストを使うのでこの部分は深く考えない。
+#### 設定方法
+
+1. モデルをインストール
+
+```
+$ ollama pull bge-m3
+```
+
+2. Dify上で"Settings" $\rightarrow$ "Model Provider" $\rightarrow$ "Ollama" $\rightarrow$ "Add Model" で選択。設定項目は"Embedding"と"bge-m3"を選択する以外はDeepSeek Chatbotとほぼ同様。
+
+3. Embeddingモデルを変更したら"Knowledge"からもう一度"Save & Process"ボタンを押して、念の為Indexを再度作成しておく。
+
+![Embedding Model（bge-m3）をOllama上から選択](img/dify_chapter2_embedding_model_1.png)
+
+![Embedding Modelの追加完了](img/dify_chapter2_embedding_model_2.png)
 
 
 ### Retrieval設定（TopK / Score Threshold / Rerank）
@@ -452,12 +482,18 @@ TopKは「拾うチャンク数」。小さいと取りこぼし、大きいと�
 
 0.3 / 0.5 / 0.7 あたりで試す。これは、高いほど厳選、低いほど拾う。
 
+!["DeepSeek Chatbot"の"Knowledge settings"でScore Thresholdなど変更可能。この場合はHigh Quality Index Method = bge-m3を選択。](img/dify_chapter2_choose_score_thraeshold.png)
+
 ### Rerank
 
 Rerankが使える構成なら「TopKで多めに拾って、Rerankで上位を整列」が効きます（使えるモデルがあれば）。Difyのモデル種別として rerank が存在する点は公式にも説明があります。
 
 
 ## 検索テスト
+
+![Knowledgeを確認](img/dify_chapter2_05_knowlege_base.png)
+
+![KnowledgeからRetrieval Testing（検索テスト）で妥当な文脈が選択されているかチェック](img/dify_chapter2_06_knowlege_retrieval_test.png)
 
 ### Difyの「Retrieval Test」で“検索の質”を評価
 
@@ -467,12 +503,14 @@ Rerankが使える構成なら「TopKで多めに拾って、Rerankで上位を�
 
 文書として機械学習の本の第一章を与えているので、その知識を問い合わせてみます。
 
-* 「この文書で定義されている◯◯とは？」
-* 「◯◯の手順を箇条書きで」
-* 「◯◯の前提条件は？」
-* 「エラーコード◯◯の意味は？」
+1. "What is Machine Learning according to Hands-on Machine Learning book?"
+2. "What is the difference between supervised learning and unsupervised learning?"
+3. "What is the difference between batch learning and online learning?"
+4. "What is overfitting and how can it be reduced?"
+5. "What is the purpose of a validation set in Machine Learning?"
 
-**ここで見るべき観点**
+
+#### ここで見るべき観点
 
 * 上位チャンクが「質問と同じ節」から取れているか
 * 余計な章が混ざっていないか
@@ -484,14 +522,14 @@ Rerankが使える構成なら「TopKで多めに拾って、Rerankで上位を�
 
 ### アプリ側（チャットボット）で temperature を比較する
 
-前章で作ったDeepSeekチャットアプリ（Ollama）に **Knowledgeを紐づけ**てRAG回答させます（「Integrate knowledge within apps」）。
+前章で作ったDeepSeekチャットアプリ（Ollama）に Knowledgeを紐づけて（"Integrate knowledge within apps"）RAG回答させます。
 
-temperature比較はこの2点で十分：
+temperature比較はこの2点で行う
 
 1. **temp = 0.2**（堅め：根拠重視）
 2. **temp = 0.7**（柔らかめ：言い回し増える）
 
-RAGで重要なのは「検索が当たってる」ことなので、tempは最後に触る。
+RAGで重要なのは「検索が当たってる」ことなので、temperature設定は最後に触る。
 
 ### 任意：APIでRetrievalを叩いて再現性を上げる
 
@@ -500,54 +538,55 @@ Difyには **Dataset retrieve（テスト検索）API**がある。UIで見た�
 
 
 
-## まとめ
+## 検証結果のまとめ
 
 
 ```md
 # RAG検証ログ
 
 ## PDF
-- タイトル：
-- ページ数：
-- 想定用途（FAQ / 手順 / 仕様参照）：
+- タイトル：Hands-on Machine Learning with Scikit-Learn, Keras & TensorFlow, O'Reilly
+- ページ数：33
+- 想定用途：FAQ / 手順 / 仕様参照
 
 ## 実験パラメータ
 ### Chunk
-- A: max chunk length = ___
-- B: max chunk length = ___
-- chunk mode = ___（※作成時固定）
+- A: max chunk length = 1024
+- B: max chunk length = 512
 
 ### Retrieval
 - TopK: 2 / 6
 - Score threshold: 0.3 / 0.5 / 0.7
-- Rerank: on/off（モデル名: ___）
+- Rerank: off
 
 ### Embedding
-- provider/model: ___（multilingualか？）
+- provider/model: "bge-m3"
 
 ### Generation
 - LLM: deepseek-r1:1.5b (Ollama)
 - temperature: 0.2 / 0.7
 
 ## テストクエリ（5個）
-1)
-2)
-3)
-4)
-5)
+1. "What is Machine Learning according to Hands-on Machine Learning book?"
+2. "What is the difference between supervised learning and unsupervised learning?"
+3. "What is the difference between batch learning and online learning?"
+4. "What is overfitting and how can it be reduced?"
+5. "What is the purpose of a validation set in Machine Learning?"
 
 ## 観察結果（結論から）
-- 一番良かった組み合わせ：
-- 悪かった組み合わせ：
+- 一番良かった組み合わせ：Chunk 1024, Top_K 6, Threashold 0.3, Temperature 0.2
+- 悪かった組み合わせ：Chunk 1024, Top_K 2, Threashold 0.7, Temperature 0.7
 
-## なぜ精度が変わったか（重要）
-- チャンクが粗い→（例：ノイズ増/要点が埋まる）
-- チャンクが細かい→（例：文脈欠落/断片化）
-- TopKが小さい→取りこぼし
-- TopKが大きい→低関連チャンク混入
-- threshold高い→厳選されるが漏れる
-- threshold低い→拾うがノイズ増
-- embeddingが合わない→意味検索が弱い（特に多言語）
+Top_Kである程度広い範囲を検索結果に出してThreasholdで厳選する方が原文に忠実かつ適度に要約してくれる。Citationも出す。Temperatureも低めの方が無用な創造性を発揮せず手堅い。逆に、Top_Kが低く、Threashold高めでTemperature（創造性大）であると無駄な単純化や構成が多くなる。現状ではまだ好みの問題である。ただし、大量の文書を入力した場合に、正しくKPIを設定してないとユーザーによっては不満が募るはず。
+
+## なぜ精度が変わるのか?
+- チャンクが粗い → （例：ノイズ増/要点が埋まる）
+- チャンクが細かい → （例：文脈欠落/断片化）
+- TopKが小さい → 取りこぼし
+- TopKが大きい → 低関連チャンク混入
+- threshold高い → 厳選されるが漏れる
+- threshold低い → 拾うがノイズ増
+- embeddingが合わない → 意味検索が弱い（特に多言語）
 ```
 
 
@@ -668,12 +707,11 @@ Difyには **Dataset retrieve（テスト検索）API**がある。UIで見た�
 \newpage
 # 開発スタイル
 
-
-
 ## なぜウォーターフォールは失敗するか
 
-## PoC主導開発
+## PoC（Proof-Of-Concept）主導開発
 
+* 概念実証モデルの重要性
 * 小さく動かす
 * 期待値調整
 
@@ -732,7 +770,7 @@ Difyには **Dataset retrieve（テスト検索）API**がある。UIで見た�
 
 ## 動画生成AI
 
-## 自動面談・人材採用システム用ワークフロー
+## 面接・人材採用システム用ワークフロー
 
 \newpage
 # Appendix: DifyをAWSで使う
@@ -745,7 +783,7 @@ Difyには **Dataset retrieve（テスト検索）API**がある。UIで見た�
 
 
 \newpage
-# Appendix: 最新のDify DockerをUbuntuで使う
+# Appendix: Dify DockerをUbuntuで使う
 
 多少古いディストリビューションですが、Ubuntu20は安定しているのでこの版でDocker Compose V2が動作するようにします。クラウド環境だとそのまま最新のDockerやモジュールをインストールすれば良いでしょう。
 
@@ -814,7 +852,7 @@ echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.
 
 
 
-### 最新Docker + Compose v2をインストール
+### 最新Docker Compose v2をインストール
 
 ```bash
 sudo apt-get update

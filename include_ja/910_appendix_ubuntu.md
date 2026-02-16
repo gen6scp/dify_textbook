@@ -1,4 +1,4 @@
-# Appendix: 最新のDify DockerをUbuntuで使う
+# Appendix: Dify DockerをUbuntuで使う
 
 多少古いディストリビューションですが、Ubuntu20は安定しているのでこの版でDocker Compose V2が動作するようにします。クラウド環境だとそのまま最新のDockerやモジュールをインストールすれば良いでしょう。
 
@@ -67,7 +67,7 @@ echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.
 
 
 
-### 最新Docker + Compose v2をインストール
+### 最新Docker Compose v2をインストール
 
 ```bash
 sudo apt-get update
