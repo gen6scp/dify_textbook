@@ -228,7 +228,9 @@ Difyには **Dataset retrieve（テスト検索）API**がある。UIで見た�
 - 一番良かった組み合わせ：Chunk 1024, Top_K 6, Threashold 0.3, Temperature 0.2
 - 悪かった組み合わせ：Chunk 1024, Top_K 2, Threashold 0.7, Temperature 0.7
 
-Top_Kである程度広い範囲を検索結果に出してThreasholdで厳選する方が原文に忠実かつ適度に要約してくれる。Citationも出す。Temperatureも低めの方が無用な創造性を発揮せず手堅い。逆に、Top_Kが低く、Threashold高めでTemperature（創造性大）であると無駄な単純化や構成が多くなる。現状ではまだ好みの問題である。ただし、大量の文書を入力した場合に、正しくKPIを設定してないとユーザーによっては不満が募るはず。
+Top_Kである程度広い範囲を検索結果に出してThreasholdで厳選する方が原文に忠実かつ適度に要約してくれる。Citationも出す。Temperatureも低めの方が無用な創造性を発揮せず手堅い。
+
+逆に、Top_Kが低く、Threashold高めでTemperature（創造性大）であると無駄な単純化や構成が多くなる。現状ではまだ好みの問題である。ただし、大量の文書を入力した場合に、正しくKPIを設定してないとユーザーによっては不満が募るはず。
 
 ## なぜ精度が変わるのか?
 - チャンクが粗い → （例：ノイズ増/要点が埋まる）
