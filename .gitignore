@@ -2,6 +2,6 @@ tmp
 tmp/*
 tex
 tex/*
-*.pdf
+./*.pdf
 material
 
