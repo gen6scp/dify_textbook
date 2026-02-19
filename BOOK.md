@@ -1,7 +1,7 @@
 ---
-title: "Dify (Linux版)"
+title: "ＤｉｆｙによるエンタープライズＡＩ設計"
 author: "Gen K. Mariendorf"
-catch: "ローカルＬＬＭとＲＡＧで作る業務で使える実践ＡＩ基盤"
+catch: "セキュアな企業ＡＩ基盤の構築と運用"
 version: '第一版'
 include-before: \input{tex/preface}
 header-includes:
