@@ -169,6 +169,8 @@ ollama serve
 
 ### Knowledge Base 作成
 
+
+
 1. Knowledge → Create Knowledge
 2. PDFアップロード（季刊邪馬台国130号 20ページ）
 3. Chunk設定
@@ -181,7 +183,9 @@ ollama serve
 4. Embedding モデル設定
    （軽量でOK）
 
-![Knowledge Base - 主に画像主体の雑誌（季刊邪馬台国）を選択](img/dify_knowledge_base_yamataikoku.png)
+![試験用の画像主体の「季刊邪馬台国」130号（20ページ）](img/kikan_yamataikoku.jpg)
+
+![Knowledge Base - 季刊邪馬台国を選択](img/dify_knowledge_base_yamataikoku.png)
 
 
 ### Workflow 作成
